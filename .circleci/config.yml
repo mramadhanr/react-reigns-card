@@ -1,0 +1,118 @@
+version: 2.1
+
+aliases:
+  - &container_config
+    executor: node-executor
+
+executors:
+  node-executor:
+    docker:
+      - image: circleci/node:lts-buster-browsers-legacy
+
+jobs:
+  Dependencies:
+    <<: *container_config
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          key: dependency-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "package.json" }}
+      - run:
+          name: Installing Dependencies
+          command: npm install
+      - save_cache:
+          key: dependency-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
+      - run:
+          name: log-directory
+          command: ls -d */
+
+  Security:
+    <<: *container_config
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          key: dependency-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "package.json" }}
+      - run:
+          name: Audit Dependencies
+          command: npm audit
+
+  Quality:
+    <<: *container_config
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          key: dependency-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "package.json" }}
+      - run:
+          name: Lint Code
+          command: npm run lint
+
+  ##################
+  ##   Sonarqube
+  ##################
+  Analysis:
+    <<: *container_config
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          key: dependency-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "package.json" }}
+      - run:
+          name: Install Sonarqube scanner
+          command: >
+
+            wget
+            https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-3.2.0.1227-linux.zip
+
+            unzip sonar-scanner-cli-3.2.0.1227-linux.zip
+      - run:
+          name: Run Sonarqube scanner
+          command: >
+            export SONAR_SCANNER_OPTS="${SONAR_SCANNER_OPTS}"
+
+            echo ${SONAR_AUTH_TOKEN}
+
+            echo ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
+
+            eval ./sonar-scanner-3.2.0.1227-linux/bin/sonar-scanner
+            -Dsonar.projectKey=${CIRCLE_PROJECT_REPONAME} \
+
+            -Dsonar.organization=${CIRCLE_PROJECT_USERNAME} \
+
+            -Dsonar.sources=. \
+
+            -Dsonar.sourceEncoding=US-ASCII \
+
+            -Dsonar.exclusions=vendor/bundle/** \
+
+            -Dsonar.host.url=${SONAR_HOST_URL} \
+
+            -Dsonar.projectVersion=${CIRCLE_BRANCH} \
+
+            -Dsonar.login=${SONAR_AUTH_TOKEN}
+
+workflows:
+  version: 2
+  Security_and_Quality:
+    jobs:
+      - Dependencies
+      - Security:
+          requires:
+            - Dependencies
+      - Quality:
+          requires:
+            - Dependencies
+          # - Analysis:
+          #     requires:
+          #       - Security
+          #       - Quality
+          filters:
+            branches:
+              only: master
