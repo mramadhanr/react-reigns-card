@@ -1,0 +1,16 @@
+.card--transition {
+  transition: 0.25s transform cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.card--dragging {
+  transition: none;
+}
+
+.card--dragging > .card--transition {
+  transition: none;
+}
+
+.card--size {
+  width: 100%;
+  height: 100%;
+}
