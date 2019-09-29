@@ -1,5 +1,3 @@
-[![CircleCI](https://circleci.com/gh/ramazord/react-boilerplate.svg?style=svg)](https://circleci.com/gh/ramazord/react-boilerplate)
-
 # 📖 Summary
 
 React boilerplate, my ready to use react project with eslint + prettier integration in the project
