@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/ramazord/react-reigns-card.svg?style=svg)](https://circleci.com/gh/ramazord/react-reigns-card)
+
 # 📖 Summary
 
 React boilerplate, my ready to use react project with eslint + prettier integration in the project
